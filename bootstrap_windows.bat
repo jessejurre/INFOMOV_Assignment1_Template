@@ -30,7 +30,7 @@ vcpkg\vcpkg install glfw3 opencl glad opengl zlib --triplet x64-windows
 
 :: Configure the project with CMake
 echo Configuring CMake project
-cmake -B build -S . -G "Visual Studio 18 2026" -A x64 -DCMAKE_TOOLCHAIN_FILE="%CD%\vcpkg\scripts\buildsystems\vcpkg.cmake" -DUSE_ARM=OFF
+cmake -B build -S . -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE="%CD%\vcpkg\scripts\buildsystems\vcpkg.cmake" -DUSE_ARM=OFF
 
 :: Build the project using CMake
 echo Building CMake project
