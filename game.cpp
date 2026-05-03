@@ -108,7 +108,7 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
     int DeltaY = Y1 - Y0;
 
     unsigned short ErrorAdj;
-    unsigned short ErrorAccTemp, Weighting, AdjustedWeightingCurrentPixel, AdjustedWeightingNextPixel;
+    unsigned short ErrorAccTemp, Weighting;
 
     /* Line is not horizontal, diagonal, or vertical */
     unsigned short ErrorAcc = 0;  /* initialize the line error accumulator to 0 */
@@ -152,7 +152,8 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
             BYTE rr = (Weighting ^ 255) * rl + Weighting * rb >> 8;
             BYTE gr = (Weighting ^ 255) * gl + Weighting * gb >> 8;
             BYTE br = (Weighting ^ 255) * bl + Weighting * bb >> 8;
-            screen->Plot( X0, Y0, RGB( rr, gr, br ) );
+
+            screen->pixels[PixelIndex] = RGB(rr, gr, br);
 
             clrBackGround = screen->pixels[XDir + PixelIndex];
             rb = GetRValue( clrBackGround );
@@ -162,7 +163,8 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
             gr = Weighting * gl + (Weighting ^ 255) * gb >> 8;
             br = Weighting * bl + (Weighting ^ 255) * bb >> 8;
             rr = Weighting * rl + (Weighting ^ 255) * rb >> 8;
-            screen->Plot( X0 + XDir, Y0, RGB( rr, gr, br ) );
+
+            screen->pixels[XDir + PixelIndex] = RGB(rr, gr, br);
         }
         /* Draw the final pixel, which is always exactly intersected by the line
         and so needs no weighting */
@@ -198,7 +200,7 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
         BYTE gr = (Weighting ^ 255) * gl + Weighting * gb >> 8;
         BYTE br = (Weighting ^ 255) * bl + Weighting * bb >> 8;
 
-        screen->Plot( X0, Y0, RGB( rr, gr, br ) );
+        screen->pixels[PixelIndex] = RGB(rr, gr, br);
 
         clrBackGround = screen->pixels[PixelIndex + SCRWIDTH];
         rb = GetRValue( clrBackGround );
@@ -209,7 +211,7 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
         br = Weighting * bl + (Weighting ^ 255) * bb >> 8;
         rr = Weighting * rl + (Weighting ^ 255) * rb >> 8;
 
-        screen->Plot( X0, Y0 + 1, RGB( rr, gr, br ) );
+        screen->pixels[PixelIndex + SCRWIDTH] = RGB(rr, gr, br);
     }
 
     /* Draw the final pixel, which is always exactly intersected by the line
