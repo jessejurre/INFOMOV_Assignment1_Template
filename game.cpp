@@ -116,10 +116,10 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
     BYTE rl = GetRValue( clrLine );
     BYTE gl = GetGValue( clrLine );
     BYTE bl = GetBValue( clrLine );
-    double grayl = rl * 0.299 + gl * 0.587 + bl * 0.114;
+    int grayl = rl * 306 + gl * 601 + bl * 117;
 
     /* Tracking Pixel Index globally instead of X0 + Y0 * SCRWIDTH */
-    int PixelIndexY = Y0 * SCRWIDTH;
+    int PixelIndex = X0 + Y0 * SCRWIDTH;
 
     /* Is this an X-major or Y-major line? */
     if (DeltaY > DeltaX)
@@ -136,19 +136,20 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
             if (ErrorAcc <= ErrorAccTemp) {
                 /* The error accumulator turned over, so advance the X coord */
                 X0 += XDir;
+                PixelIndex += XDir;
             }
-            PixelIndexY += SCRWIDTH;
+            PixelIndex += SCRWIDTH;
             Y0++; /* Y-major, so always advance Y */
                   /* The IntensityBits most significant bits of ErrorAcc give us the
                   intensity weighting for this pixel, and the complement of the
             weighting for the paired pixel */
             Weighting = ErrorAcc >> 8;
 
-            COLORREF clrBackGround = screen->pixels[X0 + PixelIndexY];
+            COLORREF clrBackGround = screen->pixels[PixelIndex];
             BYTE rb = GetRValue( clrBackGround );
             BYTE gb = GetGValue( clrBackGround );
             BYTE bb = GetBValue( clrBackGround );
-            double grayb = rb * 0.299 + gb * 0.587 + bb * 0.114;
+            int grayb = rb * 306 + gb * 601 + bb * 117;
 
             /* Adjust the weight value to be the inverse depending on background vs line grayscale */
             AdjustedWeightingCurrentPixel = grayl < grayb ? Weighting : (Weighting ^ 255);
@@ -159,11 +160,11 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
             BYTE br = ( bb > bl ? ( ( BYTE )( (AdjustedWeightingCurrentPixel * ( bb - bl ) >> 8 ) + bl ) ) : ( ( BYTE )( (AdjustedWeightingCurrentPixel * ( bl - bb ) >> 8 ) + bb ) ) );
             screen->Plot( X0, Y0, RGB( rr, gr, br ) );
 
-            clrBackGround = screen->pixels[X0 + XDir + PixelIndexY];
+            clrBackGround = screen->pixels[XDir + PixelIndex];
             rb = GetRValue( clrBackGround );
             gb = GetGValue( clrBackGround );
             bb = GetBValue( clrBackGround );
-            grayb = rb * 0.299 + gb * 0.587 + bb * 0.114;
+            grayb = rb * 306 + gb * 601 + bb * 117;
 
             rr = ( rb > rl ? ( ( BYTE )( (AdjustedWeightingNextPixel * ( rb - rl ) >> 8 ) + rl ) ) : ( ( BYTE )( (AdjustedWeightingNextPixel * ( rl - rb ) >> 8 ) + rb ) ) );
             gr = ( gb > gl ? ( ( BYTE )( (AdjustedWeightingNextPixel * ( gb - gl ) >> 8 ) + gl ) ) : ( ( BYTE )( (AdjustedWeightingNextPixel * ( gl - gb ) >> 8 ) + gb ) ) );
@@ -186,19 +187,20 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
         if (ErrorAcc <= ErrorAccTemp) {
             /* The error accumulator turned over, so advance the Y coord */
             Y0++;
-            PixelIndexY += SCRWIDTH;
+            PixelIndex += SCRWIDTH;
         }
+        PixelIndex += XDir;
         X0 += XDir; /* X-major, so always advance X */
                     /* The IntensityBits most significant bits of ErrorAcc give us the
                     intensity weighting for this pixel, and the complement of the
         weighting for the paired pixel */
         Weighting = ErrorAcc >> 8;
 
-        COLORREF clrBackGround = screen->pixels[X0 + PixelIndexY];
+        COLORREF clrBackGround = screen->pixels[PixelIndex];
         BYTE rb = GetRValue( clrBackGround );
         BYTE gb = GetGValue( clrBackGround );
         BYTE bb = GetBValue( clrBackGround );
-        double grayb = rb * 0.299 + gb * 0.587 + bb * 0.114;
+        int grayb = rb * 306 + gb * 601 + bb * 117;
 
         /* Adjust the weight value to be the inverse depending on background vs line grayscale */
         AdjustedWeightingCurrentPixel = grayl < grayb ? Weighting : (Weighting ^ 255);
@@ -210,11 +212,11 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
 
         screen->Plot( X0, Y0, RGB( rr, gr, br ) );
 
-        clrBackGround = screen->pixels[X0 + PixelIndexY + SCRWIDTH];
+        clrBackGround = screen->pixels[PixelIndex + SCRWIDTH];
         rb = GetRValue( clrBackGround );
         gb = GetGValue( clrBackGround );
         bb = GetBValue( clrBackGround );
-        grayb = rb * 0.299 + gb * 0.587 + bb * 0.114;
+        grayb = rb * 306 + gb * 601 + bb * 117;
 
         rr = ( rb > rl ? ( ( BYTE )( (AdjustedWeightingNextPixel * ( rb - rl ) >> 8 ) + rl ) ) : ( ( BYTE )( (AdjustedWeightingNextPixel * ( rl - rb ) >> 8 ) + rb ) ) );
         gr = ( gb > gl ? ( ( BYTE )( (AdjustedWeightingNextPixel * ( gb - gl ) >> 8 ) + gl ) ) : ( ( BYTE )( (AdjustedWeightingNextPixel * ( gl - gb ) >> 8 ) + gb ) ) );
