@@ -153,7 +153,7 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
 
             /* Adjust the weight value to be the inverse depending on background vs line grayscale */
             AdjustedWeightingCurrentPixel = grayl < grayb ? Weighting : (Weighting ^ 255);
-            AdjustedWeightingNextPixel = grayl < grayb ? (Weighting ^ 255) : Weighting;
+            
             
             BYTE rr = ( rb > rl ? ( ( BYTE )( (AdjustedWeightingCurrentPixel * ( rb - rl ) >> 8 ) + rl ) ) : ( ( BYTE )( (AdjustedWeightingCurrentPixel * ( rl - rb ) >> 8 ) + rb ) ) );
             BYTE gr = ( gb > gl ? ( ( BYTE )( (AdjustedWeightingCurrentPixel * ( gb - gl ) >> 8 ) + gl ) ) : ( ( BYTE )( (AdjustedWeightingCurrentPixel * ( gl - gb ) >> 8 ) + gb ) ) );
@@ -165,6 +165,9 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
             gb = GetGValue( clrBackGround );
             bb = GetBValue( clrBackGround );
             grayb = rb * 306 + gb * 601 + bb * 117;
+
+            /* Adjust the weight value to be the inverse depending on background vs line grayscale */
+            AdjustedWeightingNextPixel = grayl < grayb ? (Weighting ^ 255) : Weighting;
 
             rr = ( rb > rl ? ( ( BYTE )( (AdjustedWeightingNextPixel * ( rb - rl ) >> 8 ) + rl ) ) : ( ( BYTE )( (AdjustedWeightingNextPixel * ( rl - rb ) >> 8 ) + rb ) ) );
             gr = ( gb > gl ? ( ( BYTE )( (AdjustedWeightingNextPixel * ( gb - gl ) >> 8 ) + gl ) ) : ( ( BYTE )( (AdjustedWeightingNextPixel * ( gl - gb ) >> 8 ) + gb ) ) );
@@ -204,7 +207,6 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
 
         /* Adjust the weight value to be the inverse depending on background vs line grayscale */
         AdjustedWeightingCurrentPixel = grayl < grayb ? Weighting : (Weighting ^ 255);
-        AdjustedWeightingNextPixel = grayl < grayb ? (Weighting ^ 255) : Weighting;
 
         BYTE br = ( bb > bl ? ( ( BYTE )( (AdjustedWeightingCurrentPixel * ( bb - bl ) >> 8 ) + bl ) ) : ( ( BYTE )( (AdjustedWeightingCurrentPixel * ( bl - bb ) >> 8 ) + bb ) ) );
         BYTE rr = ( rb > rl ? ( ( BYTE )( (AdjustedWeightingCurrentPixel * ( rb - rl ) >> 8 ) + rl ) ) : ( ( BYTE )( (AdjustedWeightingCurrentPixel * ( rl - rb ) >> 8 ) + rb ) ) );
@@ -217,6 +219,9 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
         gb = GetGValue( clrBackGround );
         bb = GetBValue( clrBackGround );
         grayb = rb * 306 + gb * 601 + bb * 117;
+
+        /* Adjust the weight value to be the inverse depending on background vs line grayscale */
+        AdjustedWeightingNextPixel = grayl < grayb ? (Weighting ^ 255) : Weighting;
 
         rr = ( rb > rl ? ( ( BYTE )( (AdjustedWeightingNextPixel * ( rb - rl ) >> 8 ) + rl ) ) : ( ( BYTE )( (AdjustedWeightingNextPixel * ( rl - rb ) >> 8 ) + rb ) ) );
         gr = ( gb > gl ? ( ( BYTE )( (AdjustedWeightingNextPixel * ( gb - gl ) >> 8 ) + gl ) ) : ( ( BYTE )( (AdjustedWeightingNextPixel * ( gl - gb ) >> 8 ) + gb ) ) );
