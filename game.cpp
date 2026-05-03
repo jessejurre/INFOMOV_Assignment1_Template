@@ -146,9 +146,9 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
             BYTE bb = GetBValue( clrBackGround );
             double grayb = rb * 0.299 + gb * 0.587 + bb * 0.114;
 
-            BYTE rr = ( rb > rl ? ( ( BYTE )( ( ( double )( grayl<grayb?Weighting:(Weighting ^ 255)) ) / 255.0 * ( rb - rl ) + rl ) ) : ( ( BYTE )( ( ( double )( grayl<grayb?Weighting:(Weighting ^ 255)) ) / 255.0 * ( rl - rb ) + rb ) ) );
-            BYTE gr = ( gb > gl ? ( ( BYTE )( ( ( double )( grayl<grayb?Weighting:(Weighting ^ 255)) ) / 255.0 * ( gb - gl ) + gl ) ) : ( ( BYTE )( ( ( double )( grayl<grayb?Weighting:(Weighting ^ 255)) ) / 255.0 * ( gl - gb ) + gb ) ) );
-            BYTE br = ( bb > bl ? ( ( BYTE )( ( ( double )( grayl<grayb?Weighting:(Weighting ^ 255)) ) / 255.0 * ( bb - bl ) + bl ) ) : ( ( BYTE )( ( ( double )( grayl<grayb?Weighting:(Weighting ^ 255)) ) / 255.0 * ( bl - bb ) + bb ) ) );
+            BYTE rr = ( rb > rl ? ( ( BYTE )( ( ( ( grayl<grayb?Weighting:(Weighting ^ 255)) ) * ( rb - rl ) >> 8 ) + rl ) ) : ( ( BYTE )( ( ( ( grayl<grayb?Weighting:(Weighting ^ 255)) ) * ( rl - rb ) >> 8 ) + rb ) ) );
+            BYTE gr = ( gb > gl ? ( ( BYTE )( ( ( ( grayl<grayb?Weighting:(Weighting ^ 255)) ) * ( gb - gl ) >> 8 ) + gl ) ) : ( ( BYTE )( ( ( ( grayl<grayb?Weighting:(Weighting ^ 255)) ) * ( gl - gb ) >> 8 ) + gb ) ) );
+            BYTE br = ( bb > bl ? ( ( BYTE )( ( ( ( grayl<grayb?Weighting:(Weighting ^ 255)) ) * ( bb - bl ) >> 8 ) + bl ) ) : ( ( BYTE )( ( ( ( grayl<grayb?Weighting:(Weighting ^ 255)) ) * ( bl - bb ) >> 8 ) + bb ) ) );
             screen->Plot( X0, Y0, RGB( rr, gr, br ) );
 
             clrBackGround = screen->pixels[X0 + XDir + Y0 * SCRWIDTH];
@@ -157,9 +157,9 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
             bb = GetBValue( clrBackGround );
             grayb = rb * 0.299 + gb * 0.587 + bb * 0.114;
 
-            rr = ( rb > rl ? ( ( BYTE )( ( ( double )( grayl<grayb?(Weighting ^ 255):Weighting) ) / 255.0 * ( rb - rl ) + rl ) ) : ( ( BYTE )( ( ( double )( grayl<grayb?(Weighting ^ 255):Weighting) ) / 255.0 * ( rl - rb ) + rb ) ) );
-            gr = ( gb > gl ? ( ( BYTE )( ( ( double )( grayl<grayb?(Weighting ^ 255):Weighting) ) / 255.0 * ( gb - gl ) + gl ) ) : ( ( BYTE )( ( ( double )( grayl<grayb?(Weighting ^ 255):Weighting) ) / 255.0 * ( gl - gb ) + gb ) ) );
-            br = ( bb > bl ? ( ( BYTE )( ( ( double )( grayl<grayb?(Weighting ^ 255):Weighting) ) / 255.0 * ( bb - bl ) + bl ) ) : ( ( BYTE )( ( ( double )( grayl<grayb?(Weighting ^ 255):Weighting) ) / 255.0 * ( bl - bb ) + bb ) ) );
+            rr = ( rb > rl ? ( ( BYTE )( ( ( ( grayl<grayb?(Weighting ^ 255):Weighting) ) * ( rb - rl ) >> 8 ) + rl ) ) : ( ( BYTE )( ( ( ( grayl<grayb?(Weighting ^ 255):Weighting) ) * ( rl - rb ) >> 8 ) + rb ) ) );
+            gr = ( gb > gl ? ( ( BYTE )( ( ( ( grayl<grayb?(Weighting ^ 255):Weighting) ) * ( gb - gl ) >> 8 ) + gl ) ) : ( ( BYTE )( ( ( ( grayl<grayb?(Weighting ^ 255):Weighting) ) * ( gl - gb ) >> 8 ) + gb ) ) );
+            br = ( bb > bl ? ( ( BYTE )( ( ( ( grayl<grayb?(Weighting ^ 255):Weighting) ) * ( bb - bl ) >> 8 ) + bl ) ) : ( ( BYTE )( ( ( ( grayl<grayb?(Weighting ^ 255):Weighting) ) * ( bl - bb ) >> 8 ) + bb ) ) );
             screen->Plot( X0 + XDir, Y0, RGB( rr, gr, br ) );
         }
         /* Draw the final pixel, which is always exactly intersected by the line
@@ -191,9 +191,9 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
         BYTE bb = GetBValue( clrBackGround );
         double grayb = rb * 0.299 + gb * 0.587 + bb * 0.114;
 
-        BYTE rr = ( rb > rl ? ( ( BYTE )( ( ( double )( grayl<grayb?Weighting:(Weighting ^ 255)) ) / 255.0 * ( rb - rl ) + rl ) ) : ( ( BYTE )( ( ( double )( grayl<grayb?Weighting:(Weighting ^ 255)) ) / 255.0 * ( rl - rb ) + rb ) ) );
-        BYTE gr = ( gb > gl ? ( ( BYTE )( ( ( double )( grayl<grayb?Weighting:(Weighting ^ 255)) ) / 255.0 * ( gb - gl ) + gl ) ) : ( ( BYTE )( ( ( double )( grayl<grayb?Weighting:(Weighting ^ 255)) ) / 255.0 * ( gl - gb ) + gb ) ) );
-        BYTE br = ( bb > bl ? ( ( BYTE )( ( ( double )( grayl<grayb?Weighting:(Weighting ^ 255)) ) / 255.0 * ( bb - bl ) + bl ) ) : ( ( BYTE )( ( ( double )( grayl<grayb?Weighting:(Weighting ^ 255)) ) / 255.0 * ( bl - bb ) + bb ) ) );
+        BYTE rr = ( rb > rl ? ( ( BYTE )( ( ( ( grayl<grayb?Weighting:(Weighting ^ 255)) ) * ( rb - rl ) >> 8 ) + rl ) ) : ( ( BYTE )( ( ( ( grayl<grayb?Weighting:(Weighting ^ 255)) ) * ( rl - rb ) >> 8 ) + rb ) ) );
+        BYTE gr = ( gb > gl ? ( ( BYTE )( ( ( ( grayl<grayb?Weighting:(Weighting ^ 255)) ) * ( gb - gl ) >> 8 ) + gl ) ) : ( ( BYTE )( ( ( ( grayl<grayb?Weighting:(Weighting ^ 255)) ) * ( gl - gb ) >> 8 ) + gb ) ) );
+        BYTE br = ( bb > bl ? ( ( BYTE )( ( ( ( grayl<grayb?Weighting:(Weighting ^ 255)) ) * ( bb - bl ) >> 8 ) + bl ) ) : ( ( BYTE )( ( ( ( grayl<grayb?Weighting:(Weighting ^ 255)) ) * ( bl - bb ) >> 8 ) + bb ) ) );
 
         screen->Plot( X0, Y0, RGB( rr, gr, br ) );
 
@@ -203,9 +203,9 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
         bb = GetBValue( clrBackGround );
         grayb = rb * 0.299 + gb * 0.587 + bb * 0.114;
 
-        rr = ( rb > rl ? ( ( BYTE )( ( ( double )( grayl<grayb?(Weighting ^ 255):Weighting) ) / 255.0 * ( rb - rl ) + rl ) ) : ( ( BYTE )( ( ( double )( grayl<grayb?(Weighting ^ 255):Weighting) ) / 255.0 * ( rl - rb ) + rb ) ) );
-        gr = ( gb > gl ? ( ( BYTE )( ( ( double )( grayl<grayb?(Weighting ^ 255):Weighting) ) / 255.0 * ( gb - gl ) + gl ) ) : ( ( BYTE )( ( ( double )( grayl<grayb?(Weighting ^ 255):Weighting) ) / 255.0 * ( gl - gb ) + gb ) ) );
-        br = ( bb > bl ? ( ( BYTE )( ( ( double )( grayl<grayb?(Weighting ^ 255):Weighting) ) / 255.0 * ( bb - bl ) + bl ) ) : ( ( BYTE )( ( ( double )( grayl<grayb?(Weighting ^ 255):Weighting) ) / 255.0 * ( bl - bb ) + bb ) ) );
+        rr = ( rb > rl ? ( ( BYTE )( ( ( ( grayl<grayb?(Weighting ^ 255):Weighting) ) * ( rb - rl ) >> 8 ) + rl ) ) : ( ( BYTE )( ( ( ( grayl<grayb?(Weighting ^ 255):Weighting) ) * ( rl - rb ) >> 8 ) + rb ) ) );
+        gr = ( gb > gl ? ( ( BYTE )( ( ( ( grayl<grayb?(Weighting ^ 255):Weighting) ) * ( gb - gl ) >> 8 ) + gl ) ) : ( ( BYTE )( ( ( ( grayl<grayb?(Weighting ^ 255):Weighting) ) * ( gl - gb ) >> 8 ) + gb ) ) );
+        br = ( bb > bl ? ( ( BYTE )( ( ( ( grayl<grayb?(Weighting ^ 255):Weighting) ) * ( bb - bl ) >> 8 ) + bl ) ) : ( ( BYTE )( ( ( ( grayl<grayb?(Weighting ^ 255):Weighting) ) * ( bl - bb ) >> 8 ) + bb ) ) );
 
         screen->Plot( X0, Y0 + 1, RGB( rr, gr, br ) );
     }
