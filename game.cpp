@@ -12,7 +12,7 @@ uint c_;													// line color backup
 int fitness;												// similarity to reference image
 int lidx = 0;												// current line to be mutated
 float peak = 0;												// peak line rendering performance
-Surface* reference, *backup;								// surfaces
+Surface* reference, *backup, *unchanged;								// surfaces
 Timer timer;
 
 #define BYTE unsigned char
@@ -108,7 +108,7 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
     int DeltaY = Y1 - Y0;
 
     unsigned short ErrorAdj;
-    unsigned short ErrorAccTemp, Weighting;
+    unsigned short ErrorAccTemp, Weighting, InverseWeighting;
 
     /* Line is not horizontal, diagonal, or vertical */
     unsigned short ErrorAcc = 0;  /* initialize the line error accumulator to 0 */
@@ -143,15 +143,16 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
                   intensity weighting for this pixel, and the complement of the
             weighting for the paired pixel */
             Weighting = ErrorAcc >> 8;
+            InverseWeighting = (Weighting ^ 255);
 
             COLORREF clrBackGround = screen->pixels[PixelIndex];
             BYTE rb = GetRValue( clrBackGround );
             BYTE gb = GetGValue( clrBackGround );
             BYTE bb = GetBValue( clrBackGround );
             
-            BYTE rr = (Weighting ^ 255) * rl + Weighting * rb >> 8;
-            BYTE gr = (Weighting ^ 255) * gl + Weighting * gb >> 8;
-            BYTE br = (Weighting ^ 255) * bl + Weighting * bb >> 8;
+            BYTE gr = InverseWeighting * gl + Weighting * gb >> 8;
+            BYTE rr = InverseWeighting * rl + Weighting * rb >> 8;
+            BYTE br = InverseWeighting * bl + Weighting * bb >> 8;
 
             screen->pixels[PixelIndex] = RGB(rr, gr, br);
 
@@ -160,9 +161,9 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
             gb = GetGValue( clrBackGround );
             bb = GetBValue( clrBackGround );
 
-            rr = Weighting * rl + (Weighting ^ 255) * rb >> 8;
-            gr = Weighting * gl + (Weighting ^ 255) * gb >> 8;
-            br = Weighting * bl + (Weighting ^ 255) * bb >> 8;
+            rr = Weighting * rl + InverseWeighting * rb >> 8;
+            gr = Weighting * gl + InverseWeighting * gb >> 8;
+            br = Weighting * bl + InverseWeighting * bb >> 8;
 
             screen->pixels[XDir + PixelIndex] = RGB(rr, gr, br);
         }
@@ -190,15 +191,16 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
                     intensity weighting for this pixel, and the complement of the
         weighting for the paired pixel */
         Weighting = ErrorAcc >> 8;
+        InverseWeighting = (Weighting ^ 255);
 
         COLORREF clrBackGround = screen->pixels[PixelIndex];
         BYTE rb = GetRValue( clrBackGround );
         BYTE gb = GetGValue( clrBackGround );
         BYTE bb = GetBValue( clrBackGround );
         
-        BYTE rr = (Weighting ^ 255) * rl + Weighting * rb >> 8;
-        BYTE gr = (Weighting ^ 255) * gl + Weighting * gb >> 8;
-        BYTE br = (Weighting ^ 255) * bl + Weighting * bb >> 8;
+        BYTE rr = InverseWeighting * rl + Weighting * rb >> 8;
+        BYTE gr = InverseWeighting * gl + Weighting * gb >> 8;
+        BYTE br = InverseWeighting * bl + Weighting * bb >> 8;
 
         screen->pixels[PixelIndex] = RGB(rr, gr, br);
 
@@ -207,9 +209,9 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
         gb = GetGValue( clrBackGround );
         bb = GetBValue( clrBackGround );
 
-        rr = Weighting * rl + (Weighting ^ 255) * rb >> 8;
-        gr = Weighting * gl + (Weighting ^ 255) * gb >> 8;
-        br = Weighting * bl + (Weighting ^ 255) * bb >> 8;
+        rr = Weighting * rl + InverseWeighting * rb >> 8;
+        gr = Weighting * gl + InverseWeighting * gb >> 8;
+        br = Weighting * bl + InverseWeighting * bb >> 8;
 
         screen->pixels[PixelIndex + SCRWIDTH] = RGB(rr, gr, br);
     }
@@ -241,6 +243,29 @@ int Game::Evaluate()
 	return (int)(diff >> 5);
 }
 
+int Game::Evaluate(int xmin, int xmax, int ymin, int ymax, Surface *surface)
+{
+  __int64 diff = 0;
+  int yacc = (ymin - 1) * SCRWIDTH;
+
+  for (uint y = ymin; y <= ymax; y++) {
+    yacc += SCRWIDTH;
+    for (uint x = xmin; x <= xmax; x++) {
+      int i = x + (yacc);
+      uint src = surface->pixels[i];
+      uint ref = reference->pixels[i];
+
+      int r0 = (src >> 16) & 255, g0 = (src >> 8) & 255, b0 = src & 255;
+      int r1 = ref >> 16, g1 = (ref >> 8) & 255, b1 = ref & 255;
+      int dr = r0 - r1, dg = g0 - g1, db = b0 - b1;
+      // calculate squared color difference;
+      // take into account eye sensitivity to red, green and blue
+      diff += 3 * dr * dr + 6 * dg * dg + db * db;
+    }
+  }
+  return (int)(diff >> 5);
+}
+
 // -----------------------------------------------------------
 // Application initialization
 // Load a previously saved generation, if available.
@@ -260,12 +285,15 @@ void Game::Init()
 	}
 	reference = new Surface( "assets/bird.png" );
 	backup = new Surface( SCRWIDTH, SCRHEIGHT );
+  unchanged = new Surface(SCRWIDTH, SCRHEIGHT);
 	memset( screen->pixels, 255, SCRWIDTH * SCRHEIGHT * 4 );
 	for (int j = 0; j < LINES; j++)
 	{
 		DrawWuLine( screen, lx1[j], ly1[j], lx2[j], ly2[j], lc[j] );
 	}
 	fitness = Evaluate();
+
+  screen->CopyTo(unchanged, 0, 0);
 }
 
 // -----------------------------------------------------------
@@ -291,6 +319,15 @@ void Game::Tick( float /* deltaTime */ )
 	{
 		backup->CopyTo( screen, 0, 0 );
 		MutateLine( lidx );
+
+    // get the bounding box of the 'old' and 'new' line
+    int xmax = max({ lx1[lidx], lx2[lidx], x1_, x2_ });
+    int xmin = min({ lx1[lidx], lx2[lidx], x1_, x2_ });
+    int ymax = max({ ly1[lidx], y1_, ly2[lidx], y2_ });
+    int ymin = min({ ly1[lidx], y1_, ly2[lidx], y2_ });
+
+    // get the fitness without the bbox
+    int previousfitness = Evaluate(xmin, xmax, ymin, ymax, unchanged);
     
     // here we just draw the remaining lines
 		for (int j = base; j < LINES; j++, lineCount++)
@@ -299,8 +336,14 @@ void Game::Tick( float /* deltaTime */ )
 		}
 
     // see if this mutation gave a better result
-		int diff = Evaluate();
-		if (diff < fitness) fitness = diff; else UndoMutation( lidx );
+		int diff = Evaluate(xmin, xmax, ymin, ymax, screen);
+
+    if (diff < previousfitness) {
+      fitness = fitness - previousfitness + diff;
+      screen->CopyTo(unchanged, 0, 0);
+    }
+    else UndoMutation(lidx);
+
 		lidx = (lidx + 1) % LINES;
 		iterCount++;
 	}
