@@ -15,6 +15,8 @@ float peak = 0;												// peak line rendering performance
 Surface* reference, *backup, *unchanged;								// surfaces
 Timer timer;
 
+int drsquares[511], dgsquares[511], dbsquares[511];
+
 #define BYTE unsigned char
 #define DWORD unsigned int
 #define COLORREF DWORD
@@ -264,10 +266,19 @@ int Game::Evaluate(int xmin, int xmax, int ymin, int ymax, Surface *surface)
       int dr = r0 - r1, dg = g0 - g1, db = b0 - b1;
       // calculate squared color difference;
       // take into account eye sensitivity to red, green and blue
-      diff += 3 * dr * dr + 6 * dg * dg + db * db;
+      diff += drsquares[dr + 255] + dgsquares[dg + 255] + dbsquares[db + 255];
     }
   }
   return (int)(diff >> 5);
+}
+
+void PrecomputeDifferenceSquares() {
+
+  for (int i = 0; i < 511; i++) {
+    drsquares[i] = 3 * (i - 255) * (i - 255);
+    dgsquares[i] = 6 * (i - 255) * (i - 255);
+    dbsquares[i] = (i - 255) * (i - 255);
+  }
 }
 
 // -----------------------------------------------------------
@@ -276,6 +287,8 @@ int Game::Evaluate(int xmin, int xmax, int ymin, int ymax, Surface *surface)
 // -----------------------------------------------------------
 void Game::Init()
 {
+  PrecomputeDifferenceSquares();
+
 	for (int i = 0; i < LINES; i++) MutateLine( i );
 	FILE* f = fopen( LINEFILE, "rb" );
 	if (f)
@@ -303,26 +316,26 @@ void Game::Init()
 // -----------------------------------------------------------
 // Main application tick function
 // -----------------------------------------------------------
-void Game::Tick( float /* deltaTime */ )
+void Game::Tick(float /* deltaTime */)
 {
-	timer.reset();
-	int lineCount = 0;
-	int iterCount = 0;
+  timer.reset();
+  int lineCount = 0;
+  int iterCount = 0;
 
-	// draw up to lidx
-	memset( screen->pixels, 255, SCRWIDTH * SCRHEIGHT * 4 );
-	for (int j = 0; j < lidx; j++, lineCount++)
-	{
-		DrawWuLine( screen, lx1[j], ly1[j], lx2[j], ly2[j], lc[j] );
-	}
-	int base = lidx;
-	screen->CopyTo( backup, 0, 0 );
+  // draw up to lidx
+  memset(screen->pixels, 255, SCRWIDTH * SCRHEIGHT * 4);
+  for (int j = 0; j < lidx; j++, lineCount++)
+  {
+    DrawWuLine(screen, lx1[j], ly1[j], lx2[j], ly2[j], lc[j]);
+  }
+  int base = lidx;
+  screen->CopyTo(backup, 0, 0);
 
   // mutate lidx "ITERATIONS" times, each time comparing the result vs the reference
-	for (int k = 0; k < ITERATIONS; k++)
-	{
-		backup->CopyTo( screen, 0, 0 );
-		MutateLine( lidx );
+  for (int k = 0; k < ITERATIONS; k++)
+  {
+    backup->CopyTo(screen, 0, 0);
+    MutateLine(lidx);
 
     // get the bounding box of the 'old' and 'new' line
     int xmax = max({ lx1[lidx], lx2[lidx], x1_, x2_ });
@@ -332,40 +345,61 @@ void Game::Tick( float /* deltaTime */ )
 
     // get the fitness without the bbox
     int previousfitness = Evaluate(xmin, xmax, ymin, ymax, unchanged);
-    
-    // here we just draw the remaining lines
-		for (int j = base; j < LINES; j++, lineCount++)
-		{
-			DrawWuLine( screen, lx1[j], ly1[j], lx2[j], ly2[j], lc[j] );
-		}
+
+    // TODO: ONLY DRAW LINES IF THEY ARE INSIDE THE BBOX
+    for (int j = base; j < LINES; j++, lineCount++)
+    {
+      /* 1/2 DELETE THIS CODE FOR NORMAL DRAWING: START */
+      if (
+        lx1[j] < xmin && lx2[j] < xmin ||
+        lx1[j] > xmax && lx2[j] > xmax ||
+        ly1[j] < ymin && ly2[j] < ymin ||
+        ly1[j] > ymax && ly2[j] > ymax
+        )
+        continue;
+      else
+      /* 1/2 DELETE THIS CODE FOR NORMAL DRAWING: END  */
+        DrawWuLine(screen, lx1[j], ly1[j], lx2[j], ly2[j], lc[j]);
+    }
 
     // see if this mutation gave a better result
-		int diff = Evaluate(xmin, xmax, ymin, ymax, screen);
+    int diff = Evaluate(xmin, xmax, ymin, ymax, screen);
 
     if (diff < previousfitness) {
       fitness = fitness - previousfitness + diff;
+
+      /* 2/2 DELETE THIS CODE FOR NORMAL DRAWING: START */
+
+      // redraw all the lines when there is a succesful mutation
+      backup->CopyTo(screen, 0, 0);
+      for (int j = base; j < LINES; j++, lineCount++)
+      {
+        DrawWuLine(screen, lx1[j], ly1[j], lx2[j], ly2[j], lc[j]);
+      }
+      /* 2/2 DELETE THIS CODE FOR NORMAL DRAWING: END  */
+
       screen->CopyTo(unchanged, 0, 0);
     }
     else UndoMutation(lidx);
 
-		lidx = (lidx + 1) % LINES;
-		iterCount++;
-	}
+    lidx = (lidx + 1) % LINES;
+    iterCount++;
+  }
 
-	// stats
-	char t[128];
-	float elapsed = timer.elapsed();
-	float lps = (float)lineCount / elapsed;
-	peak = max( lps, peak );
-	sprintf( t, "fitness: %i", fitness );
-	screen->Bar( 0, SCRHEIGHT - 33, 130, SCRHEIGHT - 1, 0 );
-	screen->Print( t, 2, SCRHEIGHT - 24, 0xffffff );
-	sprintf( t, "lps:     %5.2fK", lps );
-	screen->Print( t, 2, SCRHEIGHT - 16, 0xffffff );
-	sprintf( t, "ips:     %5.2f", (iterCount * 1000) / elapsed );
-	screen->Print( t, 2, SCRHEIGHT - 8, 0xffffff );
-	sprintf( t, "peak:    %5.2f", peak );
-	screen->Print( t, 2, SCRHEIGHT - 32, 0xffffff );
+  // stats
+  char t[128];
+  float elapsed = timer.elapsed();
+  float lps = (float)lineCount / elapsed;
+  peak = max(lps, peak);
+  sprintf(t, "fitness: %i", fitness);
+  screen->Bar(0, SCRHEIGHT - 33, 130, SCRHEIGHT - 1, 0);
+  screen->Print(t, 2, SCRHEIGHT - 24, 0xffffff);
+  sprintf(t, "lps:     %5.2fK", lps);
+  screen->Print(t, 2, SCRHEIGHT - 16, 0xffffff);
+  sprintf(t, "ips:     %5.2f", (iterCount * 1000) / elapsed);
+  screen->Print(t, 2, SCRHEIGHT - 8, 0xffffff);
+  sprintf(t, "peak:    %5.2f", peak);
+  screen->Print(t, 2, SCRHEIGHT - 32, 0xffffff);
 }
 
 // -----------------------------------------------------------
