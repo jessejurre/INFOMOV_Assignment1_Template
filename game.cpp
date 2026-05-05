@@ -146,26 +146,28 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
             InverseWeighting = (Weighting ^ 255);
 
             COLORREF clrBackGround = screen->pixels[PixelIndex];
-            BYTE rb = GetRValue( clrBackGround );
-            BYTE gb = GetGValue( clrBackGround );
-            BYTE bb = GetBValue( clrBackGround );
-            
-            BYTE gr = InverseWeighting * gl + Weighting * gb >> 8;
-            BYTE rr = InverseWeighting * rl + Weighting * rb >> 8;
-            BYTE br = InverseWeighting * bl + Weighting * bb >> 8;
 
-            screen->pixels[PixelIndex] = RGB(rr, gr, br);
+            // R and B channels together (0x00ff00ff mask)
+            uint rb = (((clrLine & 0x00ff00ff) * InverseWeighting + (clrBackGround & 0x00ff00ff) * Weighting) >> 8) & 0x00ff00ff;
+
+            // G channel (0x0000ff00 mask)
+            uint g = (((clrLine & 0x0000ff00) * InverseWeighting + (clrBackGround & 0x0000ff00) * Weighting) >> 8) & 0x0000ff00;
+
+            uint result = rb | g;
+
+            screen->pixels[PixelIndex] = result;
 
             clrBackGround = screen->pixels[XDir + PixelIndex];
-            rb = GetRValue( clrBackGround );
-            gb = GetGValue( clrBackGround );
-            bb = GetBValue( clrBackGround );
 
-            rr = Weighting * rl + InverseWeighting * rb >> 8;
-            gr = Weighting * gl + InverseWeighting * gb >> 8;
-            br = Weighting * bl + InverseWeighting * bb >> 8;
+            // R and B channels together (0x00ff00ff mask)
+            rb = (((clrLine & 0x00ff00ff) * Weighting + (clrBackGround & 0x00ff00ff) * InverseWeighting) >> 8) & 0x00ff00ff;
 
-            screen->pixels[XDir + PixelIndex] = RGB(rr, gr, br);
+            // G channel (0x0000ff00 mask)
+            g = (((clrLine & 0x0000ff00) * Weighting + (clrBackGround & 0x0000ff00) * InverseWeighting) >> 8) & 0x0000ff00;
+
+            result = rb | g;
+
+            screen->pixels[XDir + PixelIndex] = result;
         }
         /* Draw the final pixel, which is always exactly intersected by the line
         and so needs no weighting */
@@ -194,26 +196,28 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
         InverseWeighting = (Weighting ^ 255);
 
         COLORREF clrBackGround = screen->pixels[PixelIndex];
-        BYTE rb = GetRValue( clrBackGround );
-        BYTE gb = GetGValue( clrBackGround );
-        BYTE bb = GetBValue( clrBackGround );
-        
-        BYTE rr = InverseWeighting * rl + Weighting * rb >> 8;
-        BYTE gr = InverseWeighting * gl + Weighting * gb >> 8;
-        BYTE br = InverseWeighting * bl + Weighting * bb >> 8;
 
-        screen->pixels[PixelIndex] = RGB(rr, gr, br);
+        // R and B channels together (0x00ff00ff mask)
+        uint rb = (((clrLine & 0x00ff00ff) * InverseWeighting + (clrBackGround & 0x00ff00ff) * Weighting) >> 8) & 0x00ff00ff;
+
+        // G channel (0x0000ff00 mask)
+        uint g = (((clrLine & 0x0000ff00) * InverseWeighting + (clrBackGround & 0x0000ff00) * Weighting) >> 8) & 0x0000ff00;
+
+        uint result = rb | g;
+
+        screen->pixels[PixelIndex] = result;
 
         clrBackGround = screen->pixels[PixelIndex + SCRWIDTH];
-        rb = GetRValue( clrBackGround );
-        gb = GetGValue( clrBackGround );
-        bb = GetBValue( clrBackGround );
 
-        rr = Weighting * rl + InverseWeighting * rb >> 8;
-        gr = Weighting * gl + InverseWeighting * gb >> 8;
-        br = Weighting * bl + InverseWeighting * bb >> 8;
+        // R and B channels together (0x00ff00ff mask)
+        rb = (((clrLine & 0x00ff00ff) * Weighting + (clrBackGround & 0x00ff00ff) * InverseWeighting) >> 8) & 0x00ff00ff;
 
-        screen->pixels[PixelIndex + SCRWIDTH] = RGB(rr, gr, br);
+        // G channel (0x0000ff00 mask)
+        g = (((clrLine & 0x0000ff00) * Weighting + (clrBackGround & 0x0000ff00) * InverseWeighting) >> 8) & 0x0000ff00;
+
+        result = rb | g;
+
+        screen->pixels[PixelIndex + SCRWIDTH] = result;
     }
 
     /* Draw the final pixel, which is always exactly intersected by the line
