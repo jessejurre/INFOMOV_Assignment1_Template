@@ -276,6 +276,7 @@ void Game::Tick( float /* deltaTime */ )
 	timer.reset();
 	int lineCount = 0;
 	int iterCount = 0;
+
 	// draw up to lidx
 	memset( screen->pixels, 255, SCRWIDTH * SCRHEIGHT * 4 );
 	for (int j = 0; j < lidx; j++, lineCount++)
@@ -284,20 +285,26 @@ void Game::Tick( float /* deltaTime */ )
 	}
 	int base = lidx;
 	screen->CopyTo( backup, 0, 0 );
-	// iterate and draw from lidx to end
+
+  // mutate lidx "ITERATIONS" times, each time comparing the result vs the reference
 	for (int k = 0; k < ITERATIONS; k++)
 	{
 		backup->CopyTo( screen, 0, 0 );
 		MutateLine( lidx );
+    
+    // here we just draw the remaining lines
 		for (int j = base; j < LINES; j++, lineCount++)
 		{
 			DrawWuLine( screen, lx1[j], ly1[j], lx2[j], ly2[j], lc[j] );
 		}
+
+    // see if this mutation gave a better result
 		int diff = Evaluate();
 		if (diff < fitness) fitness = diff; else UndoMutation( lidx );
 		lidx = (lidx + 1) % LINES;
 		iterCount++;
 	}
+
 	// stats
 	char t[128];
 	float elapsed = timer.elapsed();
