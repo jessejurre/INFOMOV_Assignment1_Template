@@ -12,10 +12,8 @@ uint c_;													// line color backup
 int fitness;												// similarity to reference image
 int lidx = 0;												// current line to be mutated
 float peak = 0;												// peak line rendering performance
-Surface* reference, *backup, *unchanged;								// surfaces
+Surface* reference, * backup;								// surfaces
 Timer timer;
-
-int drsquares[511], dgsquares[511], dbsquares[511];
 
 #define BYTE unsigned char
 #define DWORD unsigned int
@@ -33,45 +31,45 @@ using namespace std;
 // Mutate
 // Randomly modify or replace one line.
 // -----------------------------------------------------------
-void MutateLine( int i )
+void MutateLine(int i)
 {
-	// backup the line before modifying it
-	x1_ = lx1[i], y1_ = ly1[i];
-	x2_ = lx2[i], y2_ = ly2[i];
-	c_ = lc[i];
-	do
-	{
-		if (rand() & 1)
-		{
-			// color mutation (50% probability)
-			lc[i] = RandomUInt() & 0xffffff;
-		}
-		else if (rand() & 1)
-		{
-			// small mutation (25% probability)
-			lx1[i] += RandomUInt() % 6 - 3, ly1[i] += RandomUInt() % 6 - 3;
-			lx2[i] += RandomUInt() % 6 - 3, ly2[i] += RandomUInt() % 6 - 3;
-			// ensure the line stays on the screen
-			lx1[i] = min( SCRWIDTH - 1, max( 0, lx1[i] ) );
-			lx2[i] = min( SCRWIDTH - 1, max( 0, lx2[i] ) );
-			ly1[i] = min( SCRHEIGHT - 1, max( 0, ly1[i] ) );
-			ly2[i] = min( SCRHEIGHT - 1, max( 0, ly2[i] ) );
-		}
-		else
-		{
-			// new line (25% probability)
-			lx1[i] = RandomUInt() % SCRWIDTH, lx2[i] = RandomUInt() % SCRWIDTH;
-			ly1[i] = RandomUInt() % SCRHEIGHT, ly2[i] = RandomUInt() % SCRHEIGHT;
-		}
-	} while ((abs( lx1[i] - lx2[i] ) < 3) || (abs( ly1[i] - ly2[i] ) < 3));
+  // backup the line before modifying it
+  x1_ = lx1[i], y1_ = ly1[i];
+  x2_ = lx2[i], y2_ = ly2[i];
+  c_ = lc[i];
+  do
+  {
+    if (rand() & 1)
+    {
+      // color mutation (50% probability)
+      lc[i] = RandomUInt() & 0xffffff;
+    }
+    else if (rand() & 1)
+    {
+      // small mutation (25% probability)
+      lx1[i] += RandomUInt() % 6 - 3, ly1[i] += RandomUInt() % 6 - 3;
+      lx2[i] += RandomUInt() % 6 - 3, ly2[i] += RandomUInt() % 6 - 3;
+      // ensure the line stays on the screen
+      lx1[i] = min(SCRWIDTH - 1, max(0, lx1[i]));
+      lx2[i] = min(SCRWIDTH - 1, max(0, lx2[i]));
+      ly1[i] = min(SCRHEIGHT - 1, max(0, ly1[i]));
+      ly2[i] = min(SCRHEIGHT - 1, max(0, ly2[i]));
+    }
+    else
+    {
+      // new line (25% probability)
+      lx1[i] = RandomUInt() % SCRWIDTH, lx2[i] = RandomUInt() % SCRWIDTH;
+      ly1[i] = RandomUInt() % SCRHEIGHT, ly2[i] = RandomUInt() % SCRHEIGHT;
+    }
+  } while ((abs(lx1[i] - lx2[i]) < 3) || (abs(ly1[i] - ly2[i]) < 3));
 }
 
-void UndoMutation( int i )
+void UndoMutation(int i)
 {
-	// restore line i to the backuped state
-	lx1[i] = x1_, ly1[i] = y1_;
-	lx2[i] = x2_, ly2[i] = y2_;
-	lc[i] = c_;
+  // restore line i to the backuped state
+  lx1[i] = x1_, ly1[i] = y1_;
+  lx2[i] = x2_, ly2[i] = y2_;
+  lc[i] = c_;
 }
 
 // -----------------------------------------------------------
@@ -80,151 +78,151 @@ void UndoMutation( int i )
 // Straight from:
 // https://www.codeproject.com/Articles/13360/Antialiasing-Wu-Algorithm
 // -----------------------------------------------------------
-void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
+void DrawWuLine(Surface* screen, int X0, int Y0, int X1, int Y1, uint clrLine)
 {
-    /* Make sure the line runs top to bottom */
-    if (Y0 > Y1)
-    {
-        int Temp = Y0; Y0 = Y1; Y1 = Temp;
-        Temp = X0; X0 = X1; X1 = Temp;
-    }
+  /* Make sure the line runs top to bottom */
+  if (Y0 > Y1)
+  {
+    int Temp = Y0; Y0 = Y1; Y1 = Temp;
+    Temp = X0; X0 = X1; X1 = Temp;
+  }
 
-    /* Draw the initial pixel, which is always exactly intersected by
-    the line and so needs no weighting */
-    screen->pixels[X0 + Y0] = clrLine;
+  /* Draw the initial pixel, which is always exactly intersected by
+  the line and so needs no weighting */
+  screen->pixels[X0 + Y0] = clrLine;
 
-    int XDir, DeltaX = X1 - X0;
-    if( DeltaX >= 0 )
-    {
-        XDir = 1;
-    }
-    else
-    {
-        XDir   = -1;
-        DeltaX = 0 - DeltaX; /* make DeltaX positive */
-    }
+  int XDir, DeltaX = X1 - X0;
+  if (DeltaX >= 0)
+  {
+    XDir = 1;
+  }
+  else
+  {
+    XDir = -1;
+    DeltaX = 0 - DeltaX; /* make DeltaX positive */
+  }
 
-    /* Special-case horizontal, vertical, and diagonal lines, which
-    require no weighting because they go right through the center of
-    every pixel */
-    int DeltaY = Y1 - Y0;
+  /* Special-case horizontal, vertical, and diagonal lines, which
+  require no weighting because they go right through the center of
+  every pixel */
+  int DeltaY = Y1 - Y0;
 
-    unsigned short ErrorAdj;
-    unsigned short ErrorAccTemp, Weighting, InverseWeighting;
+  unsigned short ErrorAdj;
+  unsigned short ErrorAccTemp, Weighting, InverseWeighting;
 
-    /* Line is not horizontal, diagonal, or vertical */
-    unsigned short ErrorAcc = 0;  /* initialize the line error accumulator to 0 */
+  /* Line is not horizontal, diagonal, or vertical */
+  unsigned short ErrorAcc = 0;  /* initialize the line error accumulator to 0 */
 
-    BYTE rl = GetRValue( clrLine );
-    BYTE gl = GetGValue( clrLine );
-    BYTE bl = GetBValue( clrLine );
+  BYTE rl = GetRValue(clrLine);
+  BYTE gl = GetGValue(clrLine);
+  BYTE bl = GetBValue(clrLine);
 
-    /* Tracking Pixel Index globally instead of X0 + Y0 * SCRWIDTH */
-    int PixelIndex = X0 + Y0 * SCRWIDTH;
+  /* Tracking Pixel Index globally instead of X0 + Y0 * SCRWIDTH */
+  int PixelIndex = X0 + Y0 * SCRWIDTH;
 
-    /* Is this an X-major or Y-major line? */
-    if (DeltaY > DeltaX)
-    {
+  /* Is this an X-major or Y-major line? */
+  if (DeltaY > DeltaX)
+  {
     /* Y-major line; calculate 16-bit fixed-point fractional part of a
     pixel that X advances each time Y advances 1 pixel, truncating the
         result so that we won't overrun the endpoint along the X axis */
-        ErrorAdj = ((unsigned long) DeltaX << 16) / (unsigned long) DeltaY;
+    ErrorAdj = ((unsigned long)DeltaX << 16) / (unsigned long)DeltaY;
 
-        /* Draw all pixels other than the first and last */
-        while (--DeltaY) {
-            ErrorAccTemp = ErrorAcc;   /* remember currrent accumulated error */
-            ErrorAcc += ErrorAdj;      /* calculate error for next pixel */
-            if (ErrorAcc <= ErrorAccTemp) {
-                /* The error accumulator turned over, so advance the X coord */
-                X0 += XDir;
-                PixelIndex += XDir;
-            }
-            PixelIndex += SCRWIDTH;
-            Y0++; /* Y-major, so always advance Y */
-                  /* The IntensityBits most significant bits of ErrorAcc give us the
-                  intensity weighting for this pixel, and the complement of the
-            weighting for the paired pixel */
-            Weighting = ErrorAcc >> 8;
-            InverseWeighting = (Weighting ^ 255);
-
-            COLORREF clrBackGround = screen->pixels[PixelIndex];
-
-            // R and B channels together (0x00ff00ff mask)
-            uint rb = (((clrLine & 0x00ff00ff) * InverseWeighting + (clrBackGround & 0x00ff00ff) * Weighting) >> 8) & 0x00ff00ff;
-
-            // G channel (0x0000ff00 mask)
-            uint g = (((clrLine & 0x0000ff00) * InverseWeighting + (clrBackGround & 0x0000ff00) * Weighting) >> 8) & 0x0000ff00;
-
-            uint result = rb | g;
-
-            screen->pixels[PixelIndex] = result;
-
-            clrBackGround = screen->pixels[XDir + PixelIndex];
-
-            // R and B channels together (0x00ff00ff mask)
-            rb = (((clrLine & 0x00ff00ff) * Weighting + (clrBackGround & 0x00ff00ff) * InverseWeighting) >> 8) & 0x00ff00ff;
-
-            // G channel (0x0000ff00 mask)
-            g = (((clrLine & 0x0000ff00) * Weighting + (clrBackGround & 0x0000ff00) * InverseWeighting) >> 8) & 0x0000ff00;
-
-            result = rb | g;
-
-            screen->pixels[XDir + PixelIndex] = result;
-        }
-        /* Draw the final pixel, which is always exactly intersected by the line
-        and so needs no weighting */
-        screen->pixels[X1 + Y1] = clrLine;
-        return;
-    }
-    /* It's an X-major line; calculate 16-bit fixed-point fractional part of a
-    pixel that Y advances each time X advances 1 pixel, truncating the
-    result to avoid overrunning the endpoint along the X axis */
-    ErrorAdj = ((unsigned long) DeltaY << 16) / (unsigned long) DeltaX;
     /* Draw all pixels other than the first and last */
-    while (--DeltaX) {
-        ErrorAccTemp = ErrorAcc;   /* remember currrent accumulated error */
-        ErrorAcc += ErrorAdj;      /* calculate error for next pixel */
-        if (ErrorAcc <= ErrorAccTemp) {
-            /* The error accumulator turned over, so advance the Y coord */
-            Y0++;
-            PixelIndex += SCRWIDTH;
-        }
+    while (--DeltaY) {
+      ErrorAccTemp = ErrorAcc;   /* remember currrent accumulated error */
+      ErrorAcc += ErrorAdj;      /* calculate error for next pixel */
+      if (ErrorAcc <= ErrorAccTemp) {
+        /* The error accumulator turned over, so advance the X coord */
+        X0 += XDir;
         PixelIndex += XDir;
-        X0 += XDir; /* X-major, so always advance X */
-                    /* The IntensityBits most significant bits of ErrorAcc give us the
-                    intensity weighting for this pixel, and the complement of the
-        weighting for the paired pixel */
-        Weighting = ErrorAcc >> 8;
-        InverseWeighting = (Weighting ^ 255);
+      }
+      PixelIndex += SCRWIDTH;
+      Y0++; /* Y-major, so always advance Y */
+      /* The IntensityBits most significant bits of ErrorAcc give us the
+      intensity weighting for this pixel, and the complement of the
+weighting for the paired pixel */
+      Weighting = ErrorAcc >> 8;
+      InverseWeighting = (Weighting ^ 255);
 
-        COLORREF clrBackGround = screen->pixels[PixelIndex];
+      COLORREF clrBackGround = screen->pixels[PixelIndex];
 
-        // R and B channels together (0x00ff00ff mask)
-        uint rb = (((clrLine & 0x00ff00ff) * InverseWeighting + (clrBackGround & 0x00ff00ff) * Weighting) >> 8) & 0x00ff00ff;
+      // R and B channels together (0x00ff00ff mask)
+      uint rb = (((clrLine & 0x00ff00ff) * InverseWeighting + (clrBackGround & 0x00ff00ff) * Weighting) >> 8) & 0x00ff00ff;
 
-        // G channel (0x0000ff00 mask)
-        uint g = (((clrLine & 0x0000ff00) * InverseWeighting + (clrBackGround & 0x0000ff00) * Weighting) >> 8) & 0x0000ff00;
+      // G channel (0x0000ff00 mask)
+      uint g = (((clrLine & 0x0000ff00) * InverseWeighting + (clrBackGround & 0x0000ff00) * Weighting) >> 8) & 0x0000ff00;
 
-        uint result = rb | g;
+      uint result = rb | g;
 
-        screen->pixels[PixelIndex] = result;
+      screen->pixels[PixelIndex] = result;
 
-        clrBackGround = screen->pixels[PixelIndex + SCRWIDTH];
+      clrBackGround = screen->pixels[XDir + PixelIndex];
 
-        // R and B channels together (0x00ff00ff mask)
-        rb = (((clrLine & 0x00ff00ff) * Weighting + (clrBackGround & 0x00ff00ff) * InverseWeighting) >> 8) & 0x00ff00ff;
+      // R and B channels together (0x00ff00ff mask)
+      rb = (((clrLine & 0x00ff00ff) * Weighting + (clrBackGround & 0x00ff00ff) * InverseWeighting) >> 8) & 0x00ff00ff;
 
-        // G channel (0x0000ff00 mask)
-        g = (((clrLine & 0x0000ff00) * Weighting + (clrBackGround & 0x0000ff00) * InverseWeighting) >> 8) & 0x0000ff00;
+      // G channel (0x0000ff00 mask)
+      g = (((clrLine & 0x0000ff00) * Weighting + (clrBackGround & 0x0000ff00) * InverseWeighting) >> 8) & 0x0000ff00;
 
-        result = rb | g;
+      result = rb | g;
 
-        screen->pixels[PixelIndex + SCRWIDTH] = result;
+      screen->pixels[XDir + PixelIndex] = result;
     }
-
     /* Draw the final pixel, which is always exactly intersected by the line
     and so needs no weighting */
     screen->pixels[X1 + Y1] = clrLine;
+    return;
+  }
+  /* It's an X-major line; calculate 16-bit fixed-point fractional part of a
+  pixel that Y advances each time X advances 1 pixel, truncating the
+  result to avoid overrunning the endpoint along the X axis */
+  ErrorAdj = ((unsigned long)DeltaY << 16) / (unsigned long)DeltaX;
+  /* Draw all pixels other than the first and last */
+  while (--DeltaX) {
+    ErrorAccTemp = ErrorAcc;   /* remember currrent accumulated error */
+    ErrorAcc += ErrorAdj;      /* calculate error for next pixel */
+    if (ErrorAcc <= ErrorAccTemp) {
+      /* The error accumulator turned over, so advance the Y coord */
+      Y0++;
+      PixelIndex += SCRWIDTH;
+    }
+    PixelIndex += XDir;
+    X0 += XDir; /* X-major, so always advance X */
+    /* The IntensityBits most significant bits of ErrorAcc give us the
+    intensity weighting for this pixel, and the complement of the
+weighting for the paired pixel */
+    Weighting = ErrorAcc >> 8;
+    InverseWeighting = (Weighting ^ 255);
+
+    COLORREF clrBackGround = screen->pixels[PixelIndex];
+
+    // R and B channels together (0x00ff00ff mask)
+    uint rb = (((clrLine & 0x00ff00ff) * InverseWeighting + (clrBackGround & 0x00ff00ff) * Weighting) >> 8) & 0x00ff00ff;
+
+    // G channel (0x0000ff00 mask)
+    uint g = (((clrLine & 0x0000ff00) * InverseWeighting + (clrBackGround & 0x0000ff00) * Weighting) >> 8) & 0x0000ff00;
+
+    uint result = rb | g;
+
+    screen->pixels[PixelIndex] = result;
+
+    clrBackGround = screen->pixels[PixelIndex + SCRWIDTH];
+
+    // R and B channels together (0x00ff00ff mask)
+    rb = (((clrLine & 0x00ff00ff) * Weighting + (clrBackGround & 0x00ff00ff) * InverseWeighting) >> 8) & 0x00ff00ff;
+
+    // G channel (0x0000ff00 mask)
+    g = (((clrLine & 0x0000ff00) * Weighting + (clrBackGround & 0x0000ff00) * InverseWeighting) >> 8) & 0x0000ff00;
+
+    result = rb | g;
+
+    screen->pixels[PixelIndex + SCRWIDTH] = result;
+  }
+
+  /* Draw the final pixel, which is always exactly intersected by the line
+  and so needs no weighting */
+  screen->pixels[X1 + Y1] = clrLine;
 }
 
 // -----------------------------------------------------------
@@ -233,52 +231,20 @@ void DrawWuLine( Surface *screen, int X0, int Y0, int X1, int Y1, uint clrLine )
 // -----------------------------------------------------------
 int Game::Evaluate()
 {
-	const uint count = SCRWIDTH * SCRHEIGHT;
-	__int64 diff = 0;
-	for( uint i = 0; i < count; i++ )
-	{
-		uint src = screen->pixels[i];
-		uint ref = reference->pixels[i];
-		int r0 = (src >> 16) & 255, g0 = (src >> 8) & 255, b0 = src & 255;
-		int r1 = ref >> 16, g1 = (ref >> 8) & 255, b1 = ref & 255;
-		int dr = r0 - r1, dg = g0 - g1, db = b0 - b1;
-		// calculate squared color difference;
-		// take into account eye sensitivity to red, green and blue
-		diff += 3 * dr * dr + 6 * dg * dg + db * db;
-	}
-	return (int)(diff >> 5);
-}
-
-int Game::Evaluate(int xmin, int xmax, int ymin, int ymax, Surface *surface)
-{
+  const uint count = SCRWIDTH * SCRHEIGHT;
   __int64 diff = 0;
-  int yacc = (ymin - 1) * SCRWIDTH;
-
-  for (uint y = ymin; y <= ymax; y++) {
-    yacc += SCRWIDTH;
-    for (uint x = xmin; x <= xmax; x++) {
-      int i = x + (yacc);
-      uint src = surface->pixels[i];
-      uint ref = reference->pixels[i];
-
-      int r0 = (src >> 16) & 255, g0 = (src >> 8) & 255, b0 = src & 255;
-      int r1 = ref >> 16, g1 = (ref >> 8) & 255, b1 = ref & 255;
-      int dr = r0 - r1, dg = g0 - g1, db = b0 - b1;
-      // calculate squared color difference;
-      // take into account eye sensitivity to red, green and blue
-      diff += drsquares[dr + 255] + dgsquares[dg + 255] + dbsquares[db + 255];
-    }
+  for (uint i = 0; i < count; i++)
+  {
+    uint src = screen->pixels[i];
+    uint ref = reference->pixels[i];
+    int r0 = (src >> 16) & 255, g0 = (src >> 8) & 255, b0 = src & 255;
+    int r1 = ref >> 16, g1 = (ref >> 8) & 255, b1 = ref & 255;
+    int dr = r0 - r1, dg = g0 - g1, db = b0 - b1;
+    // calculate squared color difference;
+    // take into account eye sensitivity to red, green and blue
+    diff += 3 * dr * dr + 6 * dg * dg + db * db;
   }
   return (int)(diff >> 5);
-}
-
-void PrecomputeDifferenceSquares() {
-
-  for (int i = 0; i < 511; i++) {
-    drsquares[i] = 3 * (i - 255) * (i - 255);
-    dgsquares[i] = 6 * (i - 255) * (i - 255);
-    dbsquares[i] = (i - 255) * (i - 255);
-  }
 }
 
 // -----------------------------------------------------------
@@ -287,30 +253,25 @@ void PrecomputeDifferenceSquares() {
 // -----------------------------------------------------------
 void Game::Init()
 {
-  PrecomputeDifferenceSquares();
-
-	for (int i = 0; i < LINES; i++) MutateLine( i );
-	FILE* f = fopen( LINEFILE, "rb" );
-	if (f)
-	{
-		fread( lx1, 4, LINES, f );
-		fread( ly1, 4, LINES, f );
-		fread( lx2, 4, LINES, f );
-		fread( ly2, 4, LINES, f );
-		fread( lc, 4, LINES, f );
-		fclose( f );
-	}
-	reference = new Surface( "assets/bird.png" );
-	backup = new Surface( SCRWIDTH, SCRHEIGHT );
-  unchanged = new Surface(SCRWIDTH, SCRHEIGHT);
-	memset( screen->pixels, 255, SCRWIDTH * SCRHEIGHT * 4 );
-	for (int j = 0; j < LINES; j++)
-	{
-		DrawWuLine( screen, lx1[j], ly1[j], lx2[j], ly2[j], lc[j] );
-	}
-	fitness = Evaluate();
-
-  screen->CopyTo(unchanged, 0, 0);
+  for (int i = 0; i < LINES; i++) MutateLine(i);
+  FILE* f = fopen(LINEFILE, "rb");
+  if (f)
+  {
+    fread(lx1, 4, LINES, f);
+    fread(ly1, 4, LINES, f);
+    fread(lx2, 4, LINES, f);
+    fread(ly2, 4, LINES, f);
+    fread(lc, 4, LINES, f);
+    fclose(f);
+  }
+  reference = new Surface("assets/bird.png");
+  backup = new Surface(SCRWIDTH, SCRHEIGHT);
+  memset(screen->pixels, 255, SCRWIDTH * SCRHEIGHT * 4);
+  for (int j = 0; j < LINES; j++)
+  {
+    DrawWuLine(screen, lx1[j], ly1[j], lx2[j], ly2[j], lc[j]);
+  }
+  fitness = Evaluate();
 }
 
 // -----------------------------------------------------------
@@ -321,7 +282,6 @@ void Game::Tick(float /* deltaTime */)
   timer.reset();
   int lineCount = 0;
   int iterCount = 0;
-
   // draw up to lidx
   memset(screen->pixels, 255, SCRWIDTH * SCRHEIGHT * 4);
   for (int j = 0; j < lidx; j++, lineCount++)
@@ -330,62 +290,20 @@ void Game::Tick(float /* deltaTime */)
   }
   int base = lidx;
   screen->CopyTo(backup, 0, 0);
-
-  // mutate lidx "ITERATIONS" times, each time comparing the result vs the reference
+  // iterate and draw from lidx to end
   for (int k = 0; k < ITERATIONS; k++)
   {
     backup->CopyTo(screen, 0, 0);
     MutateLine(lidx);
-
-    // get the bounding box of the 'old' and 'new' line
-    int xmax = max({ lx1[lidx], lx2[lidx], x1_, x2_ });
-    int xmin = min({ lx1[lidx], lx2[lidx], x1_, x2_ });
-    int ymax = max({ ly1[lidx], y1_, ly2[lidx], y2_ });
-    int ymin = min({ ly1[lidx], y1_, ly2[lidx], y2_ });
-
-    // get the fitness without the bbox
-    int previousfitness = Evaluate(xmin, xmax, ymin, ymax, unchanged);
-
-    // TODO: ONLY DRAW LINES IF THEY ARE INSIDE THE BBOX
     for (int j = base; j < LINES; j++, lineCount++)
     {
-      /* 1/2 DELETE THIS CODE FOR NORMAL DRAWING: START */
-      if (
-        lx1[j] < xmin && lx2[j] < xmin ||
-        lx1[j] > xmax && lx2[j] > xmax ||
-        ly1[j] < ymin && ly2[j] < ymin ||
-        ly1[j] > ymax && ly2[j] > ymax
-        )
-        continue;
-      else
-      /* 1/2 DELETE THIS CODE FOR NORMAL DRAWING: END  */
-        DrawWuLine(screen, lx1[j], ly1[j], lx2[j], ly2[j], lc[j]);
+      DrawWuLine(screen, lx1[j], ly1[j], lx2[j], ly2[j], lc[j]);
     }
-
-    // see if this mutation gave a better result
-    int diff = Evaluate(xmin, xmax, ymin, ymax, screen);
-
-    if (diff < previousfitness) {
-      fitness = fitness - previousfitness + diff;
-
-      /* 2/2 DELETE THIS CODE FOR NORMAL DRAWING: START */
-
-      // redraw all the lines when there is a succesful mutation
-      backup->CopyTo(screen, 0, 0);
-      for (int j = base; j < LINES; j++, lineCount++)
-      {
-        DrawWuLine(screen, lx1[j], ly1[j], lx2[j], ly2[j], lc[j]);
-      }
-      /* 2/2 DELETE THIS CODE FOR NORMAL DRAWING: END  */
-
-      screen->CopyTo(unchanged, 0, 0);
-    }
-    else UndoMutation(lidx);
-
+    int diff = Evaluate();
+    if (diff < fitness) fitness = diff; else UndoMutation(lidx);
     lidx = (lidx + 1) % LINES;
     iterCount++;
   }
-
   // stats
   char t[128];
   float elapsed = timer.elapsed();
@@ -408,11 +326,11 @@ void Game::Tick(float /* deltaTime */)
 // -----------------------------------------------------------
 void Game::Shutdown()
 {
-	FILE* f = fopen( LINEFILE, "wb" );
-	fwrite( lx1, 4, LINES, f );
-	fwrite( ly1, 4, LINES, f );
-	fwrite( lx2, 4, LINES, f );
-	fwrite( ly2, 4, LINES, f );
-	fwrite( lc, 4, LINES, f );
-	fclose( f );
+  FILE* f = fopen(LINEFILE, "wb");
+  fwrite(lx1, 4, LINES, f);
+  fwrite(ly1, 4, LINES, f);
+  fwrite(lx2, 4, LINES, f);
+  fwrite(ly2, 4, LINES, f);
+  fwrite(lc, 4, LINES, f);
+  fclose(f);
 }

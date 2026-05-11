@@ -14,7 +14,6 @@ public:
 	void Init();
 	void Tick( float deltaTime );
 	int Evaluate();
-	int Evaluate(int xmin, int xmax, int ymin, int ymax, Surface *surface);
 	void Shutdown();
 	// input handling
 	void MouseUp( int ) { /* implement if you want to detect mouse button presses */ }
